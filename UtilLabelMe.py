@@ -85,8 +85,8 @@ class UtilLabelMe:
             print(f"{key}: {value}")
         print("List of images:")
         print(names)
-        print('Images: ' + str(len(set(names))))
-        print('Labels: ' + str(len(names)))
+        print('Images: ' + str(len(names)))
+        print('Labels: ' + str(label_counter[labelname]))
 
     def image_processing(self, dataset, name):
         """

@@ -10,7 +10,7 @@ from UtilLabelMe import UtilLabelMe
 manager = LabelManager()
 util = UtilLabelMe()
 #Searching 'checkedtextview' label on all datasets
-#util.check_labels('checkedtextview')
+util.check_labels('checkedtextview')
 #Opening "IMG_0754" image from "Iphone" dataset.
-util.image_processing('Iphone', 'IMG_0754')
+#util.image_processing('Iphone', 'IMG_0754')
 
