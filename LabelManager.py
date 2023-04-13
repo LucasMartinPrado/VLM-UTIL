@@ -1,4 +1,4 @@
-import json, os, math, xmltodict
+import json, os, math, xmltodict, shutil
 
 class LabelManager:
 

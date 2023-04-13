@@ -1,8 +1,10 @@
 import json, os
 from PIL import Image, ImageDraw
+import click
 
 class UtilLabelMe:
 
+    DEFAULT_PATH = os.path.join(os.path.curdir, "All-Dataset")
     def format_data(self):
         """
         Transforms the data from the custom JSON format (obtained from the original XML files) to a LabelMe compatible
@@ -10,7 +12,7 @@ class UtilLabelMe:
         The JSON files in the old format are overwritten with the new data.
         """
 
-        path = os.path.join(os.path.curdir, "All-Dataset")
+        path = self.DEFAULT_PATH
         #print(path)
         for dataset in os.listdir(path):
             dataset_path = os.path.join(path, dataset)
@@ -48,53 +50,60 @@ class UtilLabelMe:
                         json.dump(formatted_data, altered_file, ensure_ascii=False, indent=4)
                         altered_file.close()
 
-
-    def check_labels(self, labelname):
+    def check_labels(self, labelname=None, path=DEFAULT_PATH):
         """
-        Checks all datasets available for a specific label and prints: the names of the images that cointain it,
+        Checks all datasets available and obtains a dictionary with all label names and frequency of said labels.
+        :return dict: keys:labelname, value: frequency
+        """
+
+        label_counter = {}
+        names=[]
+        with click.progressbar(os.listdir(path)) as listdir:
+            for dataset in listdir:
+                dataset_path = os.path.join(path, dataset)
+                # print(os.path.isdir(dataset_path))
+                if os.path.isdir(dataset_path):
+                    labels_path = os.path.join(path, dataset, "Annotations")
+                    for filename in os.listdir(labels_path):
+                        file_path = os.path.join(labels_path, filename)
+                        if os.path.isfile(file_path) and ('json') in file_path and not ('coco') in file_path:
+                            # print(filename)
+                            json_data = self.__read_data(file_path)
+                            for label in json_data["shapes"]:
+                                if label["label"].lower() in label_counter:
+                                    # incerementing the count by 1
+                                    label_counter[label["label"].lower()] += 1
+                                else:
+                                    # setting the count to 1
+                                    label_counter[label["label"].lower()] = 1
+                                if labelname is not None:
+                                    if label["label"].lower() == labelname:
+                                        if filename not in names:
+                                            names.append(filename)
+            return label_counter, names
+    def search_label(self, labelname, path=DEFAULT_PATH):
+        """
+        Checks all datasets available for a specific label and finds: the names of the images that cointain it,
         the amount of images that contain it and the amount of labels found.
         :param labelname: the name of the label to check
+        :param path: Path to the 'All-dataset' folder
+        :return list[str]: list of filenames of images that contain the label.
+        :return int: amount of times that the label appears in all datasets
         """
+        label_counter, names = self.check_labels(labelname,path)
+        if labelname in label_counter.keys():
+             return names, label_counter[labelname]
+        else:
+            return names, 0
 
-        path = os.path.join(os.path.curdir, "All-Dataset")
-        #print(path)
-        label_counter = {}
-        names = []
-        for dataset in os.listdir(path):
-            dataset_path = os.path.join(path, dataset)
-            #print(os.path.isdir(dataset_path))
-            if os.path.isdir(dataset_path):
-                labels_path = os.path.join(path, dataset, "Annotations")
-                for filename in os.listdir(labels_path):
-                    file_path = os.path.join(labels_path, filename)
-                    if os.path.isfile(file_path) and ('json') in file_path and not ('coco') in file_path:
-                        #print(filename)
-                        json_data = self.__read_data(file_path)
-                        for label in json_data["shapes"]:
-                            if label["label"].lower() in label_counter:
-                                # incerementing the count by 1
-                                label_counter[label["label"].lower()] += 1
-                            else:
-                                # setting the count to 1
-                                label_counter[label["label"].lower()] = 1
-                            if label["label"].lower() == labelname:
-                                if filename not in names:
-                                    names.append(filename)
-        print('------')
-        for key, value in label_counter.items():
-            print(f"{key}: {value}")
-        print("List of images:")
-        print(names)
-        print('Images: ' + str(len(names)))
-        print('Labels: ' + str(label_counter[labelname]))
-
-    def image_processing(self, dataset, name):
+    def image_processing(self, dataset, name, path=DEFAULT_PATH):
         """
         Opens a .jpg image from the specified dataset and draws the bounding boxes of each label.
         :param dataset: name of the dataset (folder name) the image is from
         :param name: filename of the image
+        :param path: Path to 'All-Dataset' folder
         """
-        path = os.path.join(os.path.join(os.path.curdir, "All-Dataset"), dataset)
+        path = os.path.join(path, dataset)
         image_path = os.path.join(path, "JPEGImages") + '\\' + name + '.jpg'
         data_path = os.path.join(path, "Annotations") + '\\' + name + '.json'
         img = Image.open(image_path)
