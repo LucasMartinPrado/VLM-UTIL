@@ -1,6 +1,7 @@
 import json, os
 from PIL import Image, ImageDraw
 import click
+import labelme2coco
 
 class UtilLabelMe:
 
@@ -115,6 +116,21 @@ class UtilLabelMe:
             imgRec.text((float(bbox[0]), float(bbox[1] - 10)), label["label"], fill="red")
         img.show()
 
+    def convert(self, dataset, path=DEFAULT_PATH):
+        path = os.path.join(os.path.curdir, "Dataset-STest")
+
+        # set directory that contains labelme annotations and image files
+        # labelme_folder = "tests/data/labelme_annot"
+        labelme_folder = os.path.join(path, dataset, "Annotations")
+
+        # set export dir
+        export_dir = labelme_folder = os.path.join(path, dataset, "Tests")
+
+        # set train split rate
+        train_split_rate = 0.85
+
+        # convert labelme annotations to coco
+        labelme2coco.convert(labelme_folder, export_dir, train_split_rate)
 
     def __read_data(self, filename):
         """
@@ -126,6 +142,8 @@ class UtilLabelMe:
         data = json.load(FILE)
         FILE.close()
         return data
+
+
 
     def __transform_points(self, bbox):
         """
@@ -144,3 +162,27 @@ class UtilLabelMe:
         :return list[float]
         """
         return [t_bbox[0][0], t_bbox[0][1], t_bbox[1][0], t_bbox[1][1]]
+
+    def alter_label(self, targetLabel, newName, path=DEFAULT_PATH):
+        """
+        Replaces the name of a label in all instances of the dataset.
+       :param targetLabel: original name of the label to replace
+       :param newName: name to replace the label with
+       :param path: Path to 'All-Dataset' folder
+       """
+        for dataset in os.listdir(path):
+            dataset_path = os.path.join(path, dataset)
+            if os.path.isdir(dataset_path):
+                labels_path = os.path.join(path, dataset, "Annotations")
+                for filename in os.listdir(labels_path):
+                    file_path = os.path.join(labels_path, filename)
+                    if os.path.isfile(file_path) and ('json') in file_path and not ('coco') in file_path:
+                        json_data = self.__read_data(file_path)
+                        ######MODIFIES########
+                        for object in json_data["shapes"]:
+                            if object["label"].lower() in [targetLabel]:
+                                object["label"] = newName
+                        ####################
+                        altered_file = open(file_path, 'w', encoding='utf-8')
+                        json.dump(json_data, altered_file, ensure_ascii=False, indent=4)
+                        altered_file.close()

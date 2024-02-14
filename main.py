@@ -24,10 +24,10 @@ def search(ctx, category, path, hide):
     click.echo(click.style("Image count", fg="green") + click.style(f": {len(names)}", fg="white"))
     click.echo(click.style("Label count", fg="green") + click.style(f": {count}", fg="white"))
     click.pause()
-@cli.command("check")
+@cli.command("listlabels")
 @click.pass_context
 @click.option("-p", "--path", help="Path to the 'All-Dataset' folder")
-def check(ctx, path):
+def listlabels(ctx, path):
     util = ctx.obj
     if path is None:
         counter = util.check_labels()[0]
@@ -48,6 +48,29 @@ def show(ctx, path, dataset, name):
         util.image_processing(dataset, name)
     else:
         util.image_processing(dataset, name, path=path)
+
+@cli.command("convert")
+@click.pass_context
+@click.option("-p", "--path", help="Path to the 'All-Dataset' folder")
+@click.argument("dataset")
+def show(ctx, path, dataset):
+    util = ctx.obj
+    if path is None:
+        util.convert(dataset)
+    else:
+        util.convert(dataset, path=path)
+
+@cli.command("alter")
+@click.pass_context
+@click.option("-p", "--path", help="Path to the 'All-Dataset' folder")
+@click.argument("targetlabel")
+@click.argument("newname")
+def alter(ctx, path, targetlabel, newname):
+    util = ctx.obj
+    if path is None:
+        util.alter_label(targetlabel, newname)
+    else:
+        util.alter_label(targetlabel, newname, path=path)
 
 def main():
     try:
