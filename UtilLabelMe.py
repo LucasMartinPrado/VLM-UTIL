@@ -97,23 +97,25 @@ class UtilLabelMe:
         else:
             return names, 0
 
-    def image_processing(self, dataset, name, path=DEFAULT_PATH):
+    def image_processing(self, dataset, name, path=DEFAULT_PATH, labeling=True):
         """
         Opens a .jpg image from the specified dataset and draws the bounding boxes of each label.
         :param dataset: name of the dataset (folder name) the image is from
         :param name: filename of the image
         :param path: Path to 'All-Dataset' folder
+        :param labeling: Enables the bounding boxes of each label.
         """
         path = os.path.join(path, dataset)
         image_path = os.path.join(path, "JPEGImages") + '\\' + name + '.jpg'
         data_path = os.path.join(path, "Annotations") + '\\' + name + '.json'
         img = Image.open(image_path)
-        imgRec = ImageDraw.Draw(img)
-        data = self.__read_data(data_path)
-        for label in data["shapes"]:
-            bbox = self.__detransform_points(label["points"])
-            imgRec.rectangle(bbox, outline="red")
-            imgRec.text((float(bbox[0]), float(bbox[1] - 10)), label["label"], fill="red")
+        if labeling:
+            imgRec = ImageDraw.Draw(img)
+            data = self.__read_data(data_path)
+            for label in data["shapes"]:
+                bbox = self.__detransform_points(label["points"])
+                imgRec.rectangle(bbox, outline="red")
+                imgRec.text((float(bbox[0]), float(bbox[1] - 10)), label["label"], fill="red")
         img.show()
 
     def convert(self, dataset, path=DEFAULT_PATH):
@@ -157,11 +159,19 @@ class UtilLabelMe:
     def __detransform_points(self, t_bbox):
         """
         Private method to transform the bounding box from the labelMe compatible format to the custom JSON format
-        (obtained from the original XML files)
+        (obtained from the original XML files). Shuffles the x and y coordinates so x0<x1 and y0<y1
         :param t_bbox: the transformed bounding box.
         :return list[float]
         """
-        return [t_bbox[0][0], t_bbox[0][1], t_bbox[1][0], t_bbox[1][1]]
+        x0,y0 = t_bbox[0]
+        x1,y1 = t_bbox[1]
+        if x0 > x1:
+            x0 = x1
+            x1 = t_bbox[0][0]
+        if y0 > y1:
+            x1 = t_bbox[2][0]
+            y1 = t_bbox[2][1]
+        return [x0, y0, x1, y1]
 
     def alter_label(self, targetLabel, newName, path=DEFAULT_PATH):
         """
