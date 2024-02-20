@@ -40,14 +40,15 @@ def listlabels(ctx, path):
 @cli.command("show")
 @click.pass_context
 @click.option("-p", "--path", help="Path to the 'All-Dataset' folder")
+@click.option("-h", "--hide", is_flag=True, show_default=False, default=True, help="Disable labeling on images")
 @click.argument("dataset")
 @click.argument("name")
-def show(ctx, path, dataset, name):
+def show(ctx, path, hide, dataset, name):
     util = ctx.obj
     if path is None:
-        util.image_processing(dataset, name)
+        util.image_processing(dataset, name, labeling=hide)
     else:
-        util.image_processing(dataset, name, path=path)
+        util.image_processing(dataset, name, path=path, labeling=hide)
 
 @cli.command("convert")
 @click.pass_context
