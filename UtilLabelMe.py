@@ -113,7 +113,7 @@ class UtilLabelMe:
             imgRec = ImageDraw.Draw(img)
             data = self.__read_data(data_path)
             for label in data["shapes"]:
-                bbox = self.__detransform_points(label["points"])
+                bbox = self.__arrange_points(label["points"])
                 imgRec.rectangle(bbox, outline="red")
                 imgRec.text((float(bbox[0]), float(bbox[1] - 10)), label["label"], fill="red")
         img.show()
@@ -163,14 +163,18 @@ class UtilLabelMe:
         :param t_bbox: the transformed bounding box.
         :return list[float]
         """
-        x0,y0 = t_bbox[0]
-        x1,y1 = t_bbox[1]
-        if x0 > x1:
-            x0 = x1
-            x1 = t_bbox[0][0]
-        if y0 > y1:
-            x1 = t_bbox[2][0]
-            y1 = t_bbox[2][1]
+        return [t_bbox[0][0], t_bbox[0][1], t_bbox[1][0], t_bbox[1][1]]
+
+    def __arrange_points(self, points):
+        """
+        Private method to transform the bounding box from the labelMe compatible format to the custom JSON format
+        (obtained from the original XML files). Shuffles the x and y coordinates so x0<x1 and y0<y1
+        :param points: the points list from the LabelMe compatible format.
+        :return list[float]
+        """
+        p1, p2 = points
+        x0, x1 = [p1[0], p2[0]] if p1[0] < p2[0] else [p2[0], p1[0]]
+        y0, y1 = [p1[1], p2[1]] if p1[1] < p2[1] else [p2[1], p1[1]]
         return [x0, y0, x1, y1]
 
     def alter_label(self, targetLabel, newName, path=DEFAULT_PATH):
